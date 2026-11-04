@@ -1,6 +1,7 @@
 import type { HotelContext } from '../context';
 import type { HotelTools } from '../tools';
 import type { UserRole } from '../../../shared/types/hotel';
+import { businessAdvice } from '../advice';
 
 export function createDashboardTools(
   ctx: HotelContext,
@@ -58,6 +59,7 @@ export function createDashboardTools(
       }
 
       if (activeRole === 'MANAGER') {
+        const advice = businessAdvice(state);
         return {
           greeting: `💼 Welcome back Maya! Operations briefing for ${state.name}:`,
           highlights: [
@@ -65,18 +67,21 @@ export function createDashboardTools(
             `⚖️ ${pendingApprovals.length} pending approval: "${pendingApprovals[0]?.title || 'None'}"`,
             `💰 Revenue today: ${state.revenue.currency} ${state.revenue.today} (Week: ${state.revenue.currency} ${state.revenue.week})`,
             `🧰 ${openTasks.length} open staff task(s)`,
+            ...(advice ? [advice] : []),
           ],
           actions: ['"Show approvals"', '"Raise Deluxe rates by 10%"', '"Revenue report this week"'],
         };
       }
 
       // Default to ADMIN briefing
+      const advice = businessAdvice(state);
       return {
         greeting: `👑 Executive summary for Dan — ${state.name}:`,
         highlights: [
           `📊 Revenue: ${state.revenue.currency} ${state.revenue.today} today · ${state.revenue.currency} ${state.revenue.week} this week (+9% vs last week)`,
           `🏢 Occupancy: ${state.rooms.filter((r) => r.status === 'occupied').length}/${state.rooms.length} rooms · ${state.arrivals.length} arrivals today`,
           `👥 ${state.team.length} team members active · ${pendingApprovals.length} approval requiring sign-off`,
+          ...(advice ? [advice] : []),
         ],
         actions: ['"Morning digest"', '"Show folio for room 101"', '"Revenue report this week"'],
       };

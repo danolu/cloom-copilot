@@ -104,6 +104,9 @@ ESLint `no-restricted-imports` rule — so browser bundles stay free of `node:fs
 
 - **Role-gated:** Every tool declares its allowed roles (`PERMISSIONS` in `src/server/hotel/permissions.ts`): ADMIN/SUPER_ADMIN manage team and settings, MANAGER handles rates and operations, HOUSEKEEPING sees tasks and room status only.
 - **Confirm-before-write:** High-impact writes and rate changes are confirm-gated before execution.
+- **Prisma-shaped backend:** `prisma/schema.prisma` mirrors Cloom's production schema (Tenant, Guest, RoomType, Room, Reservation, Offer, Payment, RoomTask…) — same model/field names and enums. The demo runs in-memory against matching TypeScript types; in production the tool surface becomes a Prisma/REST adapter and the agent doesn't change.
+- **Guided reservations:** Asking for a reservation opens a one-question-at-a-time draft (guest → date → nights → room type → optional discount), accepts mid-flow corrections, enforces a 20% manager-approval cap on discounts, and lands on a priced summary (`cost − discount = payable`, Cloom-style `CLOO-YYYYMM-000001` reference) behind the confirm gate.
+- **Business advice:** Manager/admin briefings and the morning digest carry one deterministic, data-backed nudge (unsold inventory, revenue trailing yesterday, open-folio exposure, turnover risk) — computed from live state, never invented.
 - **Conversation memory & batching:** Spark sees the last few turns, so follow-ups like _do the same for 205_ resolve; compound requests run as one ordered plan behind a single confirmation, stopping loudly at the first failed step.
 - **Preview & Undo:** Bulk writes show a per-item preview before confirmation, and writes are undoable (`undo` reverts rates, room blocks, tasks, folio charges, and team updates).
 - **Audit Log:** Every executed tool call lands in an immutable audit log.
