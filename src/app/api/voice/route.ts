@@ -19,8 +19,8 @@ export async function POST(req: Request) {
       const { agent } = getSession(sessionIdFrom(req, body));
       const text = body.text || '';
       const caller = body.userId || body.role || body.phone || userId;
-      const out = await agent.handle(caller, text, null);
-      return NextResponse.json({ heard: `🎙️ Heard: "${text}"`, ...out });
+      const out = await agent.handle(caller, text, null, 'web');
+      return NextResponse.json({ heard: `Heard: "${text}"`, ...out });
     }
 
     // Audio upload
@@ -31,8 +31,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Could not transcribe voice audio.' }, { status: 400 });
     }
     const { agent } = getSession(sessionIdFrom(req));
-    const out = await agent.handle(userId, transcript, null);
-    return NextResponse.json({ heard: `🎙️ Heard: "${transcript}"`, ...out });
+    const out = await agent.handle(userId, transcript, null, 'web');
+    return NextResponse.json({ heard: `Heard: "${transcript}"`, ...out });
   } catch (err: any) {
     return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
   }

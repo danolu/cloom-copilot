@@ -19,6 +19,19 @@ const RESERVATION_STATUS: Record<string, string> = {
   NO_SHOW: 'no-show',
 };
 
+// Remove emoji for the web chat. WhatsApp keeps them.
+// Also tidies the extra spaces and blank lines left behind.
+export function stripEmojis(text: string): string {
+  return text
+    .replace(/\p{Extended_Pictographic}/gu, '')
+    .replace(/[\uFE0F\u200D]/g, '')
+    .replace(/^[^\S\n]+/gm, '')
+    .replace(/[^\S\n]+$/gm, '')
+    .replace(/[^\S\n]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export const formatToolResult = (name: string, r: any): string => {
   if (name === 'get_dashboard')
     return `📊 *${r.hotel}* right now\n${r.occupancy} occupied · ${r.arrivalsToday} arriving today · ${r.openTasks} open tasks · ${r.pendingApprovals} approvals waiting · ${r.currency} ${r.revenueToday} taken today`;

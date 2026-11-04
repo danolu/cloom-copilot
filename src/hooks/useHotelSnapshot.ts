@@ -7,6 +7,7 @@ import { getState, type HotelSnapshot } from '../lib/api';
 // (check-ins, folio charges, room turnovers) without a manual refresh.
 export function useHotelSnapshot(pollMs = 3000) {
   const [snapshot, setSnapshot] = useState<HotelSnapshot | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const inFlight = useRef(false);
 
@@ -15,9 +16,11 @@ export function useHotelSnapshot(pollMs = 3000) {
     inFlight.current = true;
     try {
       setSnapshot(await getState());
+      setLoadError(false);
       setLastUpdated(new Date());
     } catch {
-      /* server not ready yet; next poll retries */
+      // Server not ready yet. The dashboard shows an error, not loading placeholders.
+      setLoadError(true);
     } finally {
       inFlight.current = false;
     }
@@ -29,5 +32,5 @@ export function useHotelSnapshot(pollMs = 3000) {
     return () => clearInterval(timer);
   }, [refresh, pollMs]);
 
-  return { snapshot, refresh, lastUpdated };
+  return { snapshot, refresh, lastUpdated, loadError };
 }

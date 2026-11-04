@@ -12,18 +12,16 @@ import {
   FiUser,
 } from 'react-icons/fi';
 import { Badge, statusTone } from '../ui/Badge';
+import { Card } from '../ui/Card';
+import { EmptyState } from '../ui/EmptyState';
 import { Typography } from '../ui/Typography';
 import type { HotelSnapshot } from '../../lib/api';
-
-function Empty({ children }: { children: string }) {
-  return <div className="panel-empty">{children}</div>;
-}
 
 // Folios, arrivals/tasks, approvals and the audit trail behind Radix Tabs,
 // so the dashboard stays scannable instead of stacking every list at once.
 export function DashboardPanels({ snapshot }: { snapshot: HotelSnapshot }) {
   return (
-    <section className="section-card" aria-label="Property details">
+    <Card aria-label="Property details">
       <Tabs.Root defaultValue="folios">
         <Tabs.List className="tabs-list" aria-label="Property details">
           <Tabs.Trigger className="tabs-trigger" value="folios">
@@ -45,7 +43,7 @@ export function DashboardPanels({ snapshot }: { snapshot: HotelSnapshot }) {
 
         <Tabs.Content value="folios">
           <div className="panel-list">
-            {snapshot.folios.length === 0 && <Empty>No folios yet.</Empty>}
+            {snapshot.folios.length === 0 && <EmptyState>No folios yet.</EmptyState>}
             {snapshot.folios.map((folio) => (
               <div className="panel-row" key={folio.room}>
                 <div className="panel-row-main">
@@ -74,7 +72,7 @@ export function DashboardPanels({ snapshot }: { snapshot: HotelSnapshot }) {
 
         <Tabs.Content value="arrivals">
           <div className="panel-list">
-            {snapshot.arrivals.length === 0 && <Empty>No arrivals expected today.</Empty>}
+            {snapshot.arrivals.length === 0 && <EmptyState>No arrivals expected today.</EmptyState>}
             {snapshot.arrivals.map((arrival, index) => (
               <div className="panel-row" key={`${arrival.guest}-${index}`}>
                 <div className="panel-row-main">
@@ -102,7 +100,7 @@ export function DashboardPanels({ snapshot }: { snapshot: HotelSnapshot }) {
 
         <Tabs.Content value="tasks">
           <div className="panel-list">
-            {snapshot.tasks.length === 0 && <Empty>No open tasks. Ask the copilot to create one.</Empty>}
+            {snapshot.tasks.length === 0 && <EmptyState>No open tasks. Ask the copilot to create one.</EmptyState>}
             {snapshot.tasks.map((task) => (
               <div className="panel-row" key={task.id}>
                 <div className="panel-row-main">
@@ -126,7 +124,7 @@ export function DashboardPanels({ snapshot }: { snapshot: HotelSnapshot }) {
 
         <Tabs.Content value="approvals">
           <div className="panel-list">
-            {snapshot.approvals.length === 0 && <Empty>No pending approvals.</Empty>}
+            {snapshot.approvals.length === 0 && <EmptyState>No pending approvals.</EmptyState>}
             {snapshot.approvals.map((approval) => (
               <div className="panel-row" key={approval.id}>
                 <div className="panel-row-main">
@@ -150,7 +148,7 @@ export function DashboardPanels({ snapshot }: { snapshot: HotelSnapshot }) {
 
         <Tabs.Content value="activity">
           <div className="panel-list">
-            {snapshot.audit.length === 0 && <Empty>No changes yet - ask the copilot to do something.</Empty>}
+            {snapshot.audit.length === 0 && <EmptyState>No changes yet - ask the copilot to do something.</EmptyState>}
             {snapshot.audit.slice(0, 10).map((entry, index) => (
               <div className="panel-row" key={`${entry.at}-${index}`}>
                 <div className="panel-row-main">
@@ -171,6 +169,6 @@ export function DashboardPanels({ snapshot }: { snapshot: HotelSnapshot }) {
           </div>
         </Tabs.Content>
       </Tabs.Root>
-    </section>
+    </Card>
   );
 }

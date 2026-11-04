@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const sessionId = sessionIdFrom(req, body);
     getSession(sessionId); // ensure it exists before resetting
     resetSession(sessionId);
-    return NextResponse.json({ ok: true, text: '♻️ Demo reset — Azure Palms restored to its seeded state.' });
+    return NextResponse.json({ ok: true, text: 'Demo reset — Azure Palms restored to its seeded state.' });
   } catch (err: any) {
     return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
   }

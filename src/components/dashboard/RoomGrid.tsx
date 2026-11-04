@@ -1,14 +1,7 @@
 import { FiHome } from 'react-icons/fi';
 import type { HotelSnapshot } from '../../lib/api';
-import { Typography } from '../ui/Typography';
-
-export const ROOM_STATUS: Record<string, { label: string; color: string }> = {
-  occupied: { label: 'occupied', color: '#2563eb' },
-  clean: { label: 'clean', color: '#059669' },
-  dirty: { label: 'dirty', color: '#dc2626' },
-  blocked: { label: 'blocked', color: '#7c3aed' },
-  inspected: { label: 'inspected', color: '#0891b2' },
-};
+import { Card } from '../ui/Card';
+import { ROOM_STATUS_META, roomStatusMeta } from './tokens';
 
 export function RoomGrid({ rooms }: { rooms: HotelSnapshot['rooms'] }) {
   const counts = rooms.reduce<Record<string, number>>((acc, room) => {
@@ -17,13 +10,13 @@ export function RoomGrid({ rooms }: { rooms: HotelSnapshot['rooms'] }) {
   }, {});
 
   return (
-    <section className="section-card" aria-label="Room status">
-      <div className="section-head">
-        <Typography variant="h2" className="section-title">
-          <FiHome aria-hidden /> Rooms
-        </Typography>
+    <Card
+      aria-label="Room status"
+      title="Rooms"
+      icon={<FiHome aria-hidden />}
+      actions={
         <div className="legend">
-          {Object.entries(ROOM_STATUS)
+          {Object.entries(ROOM_STATUS_META)
             .filter(([status]) => counts[status])
             .map(([status, meta]) => (
               <span key={status}>
@@ -32,10 +25,11 @@ export function RoomGrid({ rooms }: { rooms: HotelSnapshot['rooms'] }) {
               </span>
             ))}
         </div>
-      </div>
+      }
+    >
       <div className="room-grid">
         {rooms.map((room) => {
-          const meta = ROOM_STATUS[room.status] ?? { label: room.status, color: '#64748b' };
+          const meta = roomStatusMeta(room.status);
           return (
             <span
               key={room.number}
@@ -49,6 +43,6 @@ export function RoomGrid({ rooms }: { rooms: HotelSnapshot['rooms'] }) {
           );
         })}
       </div>
-    </section>
+    </Card>
   );
 }

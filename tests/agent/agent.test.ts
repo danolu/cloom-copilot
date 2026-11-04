@@ -210,3 +210,15 @@ test('front desk can view folio, checkout warns of balance, and cashier can sett
   assert.equal(hotel.state.folios['101'].balance, 0);
   assert.equal(hotel.state.folios['101'].status, 'SETTLED');
 });
+
+test('web replies have no emoji, WhatsApp replies keep them', async () => {
+  const dashboard = { tool: 'get_dashboard', args: {} } as Decision;
+  const whatsapp = await make(createHotel(), dashboard).handle(owner, 'dashboard status', null);
+  const web = await make(createHotel(), dashboard).handle(owner, 'dashboard status', null, 'web');
+  assert.ok(whatsapp.text);
+  assert.ok(web.text);
+  assert.match(whatsapp.text, /\p{Extended_Pictographic}/u);
+  assert.doesNotMatch(web.text, /\p{Extended_Pictographic}/u);
+  assert.match(web.text, /Azure Palms/);
+  assert.doesNotMatch(web.text, /^\s|\s{2,}|\n{3}/);
+});

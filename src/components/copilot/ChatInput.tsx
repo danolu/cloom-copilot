@@ -2,6 +2,7 @@
 
 import { FiMic, FiMicOff, FiSend } from 'react-icons/fi';
 import { IconButton } from '../ui/Button';
+import { TextField } from '../ui/TextField';
 import { Tooltip } from '../ui/Tooltip';
 
 interface ChatInputProps {
@@ -33,7 +34,7 @@ export function ChatInput({ inputText, setInputText, isRecording, toggleRecordin
         </IconButton>
       </Tooltip>
       <div className="input-wrap">
-        <input
+        <TextField
           id="copilot-chat-input"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}

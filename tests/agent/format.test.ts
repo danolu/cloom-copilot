@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHotel } from '../../src/server/hotel/hotel';
-import { formatToolResult } from '../../src/server/agent/format';
+import { formatToolResult, stripEmojis } from '../../src/server/agent/format';
 
 // Replies should read like a colleague talking, not a system dumping rows.
 test('list_rooms leads with the count and groups rooms on one line each', async () => {
@@ -13,6 +13,12 @@ test('list_rooms leads with the count and groups rooms on one line each', async 
   assert.match(lines[1], /6 ready/);
   assert.ok(lines.length <= 6, `expected a compact summary, got ${lines.length} lines:\n${text}`);
   assert.match(text, /Occupied: 101 Deluxe King \$180/);
+});
+
+test('stripEmojis removes emoji and tidies spacing', () => {
+  assert.equal(stripEmojis('\u2705 Checked in Amara into Room 102.'), 'Checked in Amara into Room 102.');
+  assert.equal(stripEmojis('\u{1F4CA} *Azure Palms* right now'), '*Azure Palms* right now');
+  assert.equal(stripEmojis('\u2705  Done\n\n\nNext  step'), 'Done\n\nNext step');
 });
 
 test('dashboard reads as one natural sentence', async () => {

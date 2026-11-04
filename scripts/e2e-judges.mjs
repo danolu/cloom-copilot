@@ -30,9 +30,14 @@ try {
   }
   check('chat popover opens', await page.getByLabel('Cloom Copilot chat').isVisible());
 
-  // Switch role -> briefing message appears (live Spark; wait for content, not a fixed sleep)
-  const roleSelect = page.locator('select:has(option[value="demo-staff"])');
-  await roleSelect.selectOption('demo-staff');
+  // Switch role via the Radix Select (combobox + options) -> briefing
+  // message appears (live Spark; wait for content, not a fixed sleep)
+  const roleTrigger = page.getByRole('combobox', { name: 'Staff role' });
+  const switchRole = async (name) => {
+    await roleTrigger.click();
+    await page.getByRole('option', { name }).click();
+  };
+  await switchRole('Kofi - Housekeeping');
   await page
     .waitForFunction(() => document.body.textContent?.includes('Kofi'), null, { timeout: 20000 })
     .catch(() => {});
@@ -41,7 +46,7 @@ try {
 
   // Reset button hidden for housekeeping, visible for admin
   check('reset hidden for housekeeping', (await page.getByText('Reset demo').count()) === 0);
-  await roleSelect.selectOption('demo-admin');
+  await switchRole('Dan - Owner');
   await page
     .getByText('Reset demo')
     .waitFor({ state: 'visible', timeout: 8000 })
@@ -50,7 +55,7 @@ try {
 
   // Refresh persistence: role stays admin
   await page.reload({ waitUntil: 'networkidle' });
-  check('role persists after refresh', (await roleSelect.inputValue()) === 'demo-admin');
+  check('role persists after refresh', ((await roleTrigger.textContent()) || '').includes('Dan - Owner'));
   await page.screenshot({ path: 'output/playwright/judge-dashboard.png' });
 
   // Second context = different judge session

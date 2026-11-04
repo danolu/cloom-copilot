@@ -5,7 +5,7 @@ import type { HotelInstance } from '../hotel/hotel';
 import { decideWithSpark, metaConfigured } from '../ai/meta-client';
 import type { User } from '../../shared/types/hotel';
 import type { AgentResponse, ChatTurn, Decision, ToolSchema } from '../../shared/types/agent';
-import { formatToolResult } from './format';
+import { formatToolResult, stripEmojis } from './format';
 import { previewTool } from './preview';
 import {
   applyDraftAnswer,
@@ -18,6 +18,9 @@ import {
   type ReservationDraft,
 } from './reservation-draft';
 
+// Where the reply is shown. Web replies have emoji removed; WhatsApp keeps them.
+export type Channel = 'web' | 'whatsapp';
+
 // Staff identity resolution. Access is strictly permission-driven based on role.
 export const userOf = (userId: string): User | null => USERS[userId] || null;
 
@@ -27,7 +30,7 @@ export const userOf = (userId: string): User | null => USERS[userId] || null;
 export const HISTORY_LIMIT = 12;
 
 export interface AgentInstance {
-  handle: (userId: string, text: string, messageId?: string | null) => Promise<AgentResponse>;
+  handle: (userId: string, text: string, messageId?: string | null, channel?: Channel) => Promise<AgentResponse>;
   pending: Map<string, Decision>;
   drafts: Map<string, ReservationDraft>;
   history: Map<string, ChatTurn[]>;
@@ -82,13 +85,26 @@ export function createAgent(hotel: HotelInstance, options: { decide?: DecideFn }
     history.set(userId, turns.slice(-HISTORY_LIMIT));
   }
 
-  async function handle(userId: string, text: string, messageId?: string | null): Promise<AgentResponse> {
+  async function handle(
+    userId: string,
+    text: string,
+    messageId?: string | null,
+    channel: Channel = 'whatsapp',
+  ): Promise<AgentResponse> {
     if (messageId) {
       if (seen.has(messageId)) return { text: null, duplicate: true };
       seen.add(messageId);
     }
     const out = await respond(userId, text);
+    // Save the original reply to history. Only the returned copy is cleaned for web.
     if (out.text && userOf(userId)) remember(userId, text.trim(), out.text);
+    if (channel === 'web') {
+      return {
+        ...out,
+        text: out.text ? stripEmojis(out.text) : out.text,
+        buttons: out.buttons?.map((button) => ({ ...button, title: stripEmojis(button.title) })),
+      };
+    }
     return out;
   }
 

@@ -7,7 +7,8 @@ export async function POST(req: Request) {
     const userId = body.userId || body.role || body.phone || 'demo-admin';
     const text = body.text || '';
     const { agent } = getSession(sessionIdFrom(req, body));
-    const out = await agent.handle(userId, text, null);
+    // Web replies have emoji removed on the server.
+    const out = await agent.handle(userId, text, null, 'web');
     return NextResponse.json(out);
   } catch (err: any) {
     return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
