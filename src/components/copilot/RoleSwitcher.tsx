@@ -54,6 +54,9 @@ export function RoleSwitcher({ role, onRoleChange, onReset }: RoleSwitcherProps)
           </Button>
         </Tooltip>
       )}
+      <Typography variant="caption" tone="muted" as="span" className="rolebar-permissions">
+        Can: {active.can} · Cannot: {active.cannot}
+      </Typography>
     </div>
   );
 }

@@ -32,7 +32,7 @@ try {
 
   // Switch role via the Radix Select (combobox + options) -> briefing
   // message appears (live Spark; wait for content, not a fixed sleep)
-  const roleTrigger = page.getByRole('combobox', { name: 'Staff role' });
+  const roleTrigger = page.getByRole('combobox', { name: 'Role switcher' });
   const switchRole = async (name) => {
     await roleTrigger.click();
     await page.getByRole('option', { name }).click();
@@ -46,7 +46,7 @@ try {
 
   // Reset button hidden for housekeeping, visible for admin
   check('reset hidden for housekeeping', (await page.getByText('Reset demo').count()) === 0);
-  await switchRole('Dan - Owner');
+  await switchRole('Dan - Admin');
   await page
     .getByText('Reset demo')
     .waitFor({ state: 'visible', timeout: 8000 })
@@ -55,7 +55,7 @@ try {
 
   // Refresh persistence: role stays admin
   await page.reload({ waitUntil: 'networkidle' });
-  check('role persists after refresh', ((await roleTrigger.textContent()) || '').includes('Dan - Owner'));
+  check('role persists after refresh', ((await roleTrigger.textContent()) || '').includes('Dan - Admin'));
   await page.screenshot({ path: 'output/playwright/judge-dashboard.png' });
 
   // Second context = different judge session

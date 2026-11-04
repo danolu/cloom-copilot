@@ -46,11 +46,74 @@ to an audit log.
 - Muse Wonder (`muse-wonder-1.0`, Meta Model API) — morning digest and executive insight
 - Built with Muse Code
 
+## Describe your use of Meta products to build the submitted project
+
+Cloom Copilot was built with Muse Code and is powered exclusively by Meta
+models through the Meta Model API — no other AI provider, and deliberately
+no offline or rule-based fallback. If the Meta Model API is not configured,
+the copilot returns a clear configuration error rather than guessing.
+
+Muse Spark (`muse-spark-1.3`) is the operations brain. For every typed or
+transcribed request, Spark receives the available hotel tool schemas and
+recent conversation history and returns a structured JSON decision: a
+single tool call, an ordered `actions` array for compound requests, or a
+plain reply. That drives room status and turnovers, check-in/check-out,
+guest folios and charges, rate changes, reservations, staff tasks, revenue
+reports, and role briefings. The server — never the model alone — then
+enforces nine-role permissions, previews write actions, and requires
+confirmation before anything changes, with preview, undo, and an immutable
+audit log.
+
+Muse Voice Transcribe (`muse-voice-transcribe-1.0`) is the ears. Voice
+notes recorded in the browser are converted to the WAV format Meta's
+`/asr/transcribe` endpoint requires and transcribed server-side; the
+resulting text enters the same Spark agent pipeline as typed chat, so
+"cleaned room 204" or "add a $25 minibar charge to room 101" spoken by
+hands-busy staff becomes a safe, confirmable action.
+
+Muse Wonder (`muse-wonder-1.0`) is the executive voice. The morning
+digest endpoint feeds Wonder live dashboard data (occupancy, arrivals,
+revenue, open tasks, pending approvals) and it returns one prioritised
+insight sentence for the general manager, combined with a deterministic,
+data-backed nudge computed from property state. All model IDs and the API
+base URL are environment-configurable, so models can be swapped without
+code changes.
+
+## Why are Meta's models important to your solution?
+
+Without Meta's models, Cloom Copilot does not degrade — it stops. Every
+decision runs through Muse Spark, every uploaded voice note through Muse
+Voice Transcribe, and every digest insight through Muse Wonder. That is
+intentional: hotel staff will only trust a copilot that understands real,
+messy requests ("do the same for 205", "check out 101 and raise Deluxe
+rates 10%") over one that matches keywords.
+
+Spark matters because of its structured, multi-step reasoning. It maps
+natural language onto typed tool calls, resolves follow-ups from
+conversation history, and decomposes compound requests into one ordered
+plan that our server can validate, permission-check, preview, and put
+behind a single confirmation. That combination — a model powerful enough
+to propose, and a deterministic safety layer that disposes — is what
+makes an AI agent safe to let near billing, rates, and reservations.
+
+Voice Transcribe matters because voice is the primary interface in a
+hotel, not a novelty: housekeeping and front-desk staff work with their
+hands full, away from desks. Accurate transcription is what lets them
+run the property by speaking. Wonder matters because managers do not
+need more dashboards of raw numbers; they need synthesis — the one thing
+to act on this morning, in one sentence, grounded in live data.
+
+Finally, having specialised models for reasoning, transcription, and
+analysis behind one Meta Model API (one key, one base URL) let a small
+startup team ship a voice-first, multi-role operations agent in
+hackathon time, choosing the right Meta model for each job instead of
+forcing one model to do everything.
+
 ## How judges can test it
 
 1. `cp .env.example .env` and set `MODEL_API_KEY`
 2. `pnpm install && pnpm test && pnpm dev`
-3. Switch roles in the header. As Dan (Owner), ask for the morning digest.
+3. Switch roles in the header. As Dan (Admin), ask for the morning digest.
 4. As Kofi (Housekeeping), try `raise Deluxe rates by 10%` — it is blocked.
 5. Ask `add $25 minibar charge to room 101`, confirm, then say `undo`.
 

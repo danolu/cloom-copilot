@@ -383,6 +383,9 @@ select:focus-visible,
   color: var(--accent-emerald);
   font-size: 15px;
 }
+.rolebar-permissions {
+  margin-left: auto;
+}
 /* Radix Select (role switcher) */
 .select-trigger {
   display: inline-flex;

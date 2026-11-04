@@ -144,7 +144,7 @@ export function createSeedState(): HotelState {
           {
             id: 'CHG-1',
             date: 'Yesterday',
-            description: 'Room Charge (2 nights @ $220)',
+            description: 'Room charge (2 nights)',
             category: 'ROOM',
             amount: 440,
             postedBy: 'system',
