@@ -104,5 +104,6 @@ ESLint `no-restricted-imports` rule — so browser bundles stay free of `node:fs
 
 - **Role-gated:** Every tool declares its allowed roles (`PERMISSIONS` in `src/server/hotel/permissions.ts`): ADMIN/SUPER_ADMIN manage team and settings, MANAGER handles rates and operations, HOUSEKEEPING sees tasks and room status only.
 - **Confirm-before-write:** High-impact writes and rate changes are confirm-gated before execution.
+- **Conversation memory & batching:** Spark sees the last few turns, so follow-ups like _do the same for 205_ resolve; compound requests run as one ordered plan behind a single confirmation, stopping loudly at the first failed step.
 - **Preview & Undo:** Bulk writes show a per-item preview before confirmation, and writes are undoable (`undo` reverts rates, room blocks, tasks, folio charges, and team updates).
 - **Audit Log:** Every executed tool call lands in an immutable audit log.

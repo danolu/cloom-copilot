@@ -41,6 +41,7 @@ export function resetSession(sessionId?: string | null): CopilotSession {
   const session = getSession(sessionId);
   session.hotel.reset();
   session.agent.pending.clear();
+  session.agent.history.clear();
   return session;
 }
 
