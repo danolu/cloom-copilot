@@ -1,4 +1,8 @@
-import { Mic, MicOff, Send } from 'lucide-react';
+'use client';
+
+import { FiMic, FiMicOff, FiSend } from 'react-icons/fi';
+import { IconButton } from '../ui/Button';
+import { Tooltip } from '../ui/Tooltip';
 
 interface ChatInputProps {
   inputText: string;
@@ -10,86 +14,47 @@ interface ChatInputProps {
 
 export function ChatInput({ inputText, setInputText, isRecording, toggleRecording, handleSend }: ChatInputProps) {
   return (
-    <footer
-      style={{
-        padding: '10px 14px',
-        background: 'var(--bg-card)',
-        borderTop: '1px solid var(--border-subtle)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
+    <form
+      className="chat-input"
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleSend();
       }}
     >
-      <button
-        onClick={toggleRecording}
-        style={{
-          background: isRecording ? 'var(--danger)' : '#f1f5f9',
-          border: `1px solid ${isRecording ? 'var(--danger)' : 'var(--border-subtle)'}`,
-          color: isRecording ? '#ffffff' : 'var(--accent-emerald)',
-          width: 40,
-          height: 40,
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          animation: isRecording ? 'pulseGlow 1.2s infinite' : 'none',
-        }}
-        title={isRecording ? 'Stop recording voice' : 'Record voice note'}
-      >
-        {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
-      </button>
-
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          background: '#f8fafc',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 22,
-          padding: '4px 14px',
-        }}
-      >
+      <Tooltip label={isRecording ? 'Stop recording voice note' : 'Record voice note'}>
+        <IconButton
+          size="lg"
+          variant={isRecording ? 'danger' : 'secondary'}
+          className={isRecording ? 'recording' : undefined}
+          onClick={toggleRecording}
+          aria-label={isRecording ? 'Stop recording voice note' : 'Record voice note'}
+        >
+          {isRecording ? <FiMicOff aria-hidden /> : <FiMic aria-hidden />}
+        </IconButton>
+      </Tooltip>
+      <div className="input-wrap">
         <input
+          id="copilot-chat-input"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSend();
-          }}
           placeholder={
-            isRecording ? '🎙️ Listening to voice note…' : 'Ask anything, post folio charges, or manage rooms…'
+            isRecording ? 'Listening to voice note...' : 'Ask anything, post folio charges, or manage rooms...'
           }
-          style={{
-            flex: 1,
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--text-primary)',
-            fontSize: 14,
-            outline: 'none',
-            padding: '8px 0',
-          }}
+          aria-label="Message the copilot"
+          autoComplete="off"
         />
       </div>
-
-      <button
-        onClick={handleSend}
-        style={{
-          background: 'var(--accent-emerald)',
-          border: 'none',
-          color: '#ffffff',
-          width: 40,
-          height: 40,
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-        }}
-        title="Send"
-      >
-        <Send size={16} />
-      </button>
-    </footer>
+      <Tooltip label="Send message">
+        <IconButton
+          size="lg"
+          variant="primary"
+          type="submit"
+          disabled={!inputText.trim() && !isRecording}
+          aria-label="Send message"
+        >
+          <FiSend aria-hidden />
+        </IconButton>
+      </Tooltip>
+    </form>
   );
 }

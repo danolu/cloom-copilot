@@ -8,7 +8,7 @@ const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '
 const WELCOME: Message = {
   id: 'welcome',
   sender: 'bot',
-  text: '👋 Welcome to **Azure Palms Hotel Operations** powered by **Cloom Copilot** — built with Meta Muse models for the Meta AI Hackathon.\n\nEquipped with **Folio & Billing / POS** management, voice notes, role-gating, and hands-free voice calling.',
+  text: 'Hi, I\'m your **Azure Palms** copilot. Ask me things like *"How many rooms are free?"* or *"Who\'s arriving today?"* — or say *"Create a reservation"* and I\'ll walk you through it, one step at a time. You can type or talk.',
   time: 'Just now',
 };
 
@@ -24,6 +24,9 @@ const stored = <T>(key: string): T | null => {
 export function useCopilotChat(speak: (text: string) => void) {
   const [role, setRole] = useState(() => stored<string>('cloom-role') || 'demo-admin');
   const [messages, setMessages] = useState<Message[]>(() => stored<Message[]>('cloom-messages') || [WELCOME]);
+  // A count, not a boolean: chips and role switches can keep a second turn
+  // in flight while the first resolves, and the indicator must not flicker.
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
     try {
@@ -57,7 +60,9 @@ export function useCopilotChat(speak: (text: string) => void) {
   const addBotResponse = useCallback(
     (
       res: { text?: string | null; buttons?: Message['buttons']; document?: Message['document'] },
-      shouldSpeak = true,
+      // Replies are NOT read aloud by default — speech is opt-in via the
+      // speaker toggle, the per-message read-aloud button, or a live call.
+      shouldSpeak = false,
     ) => {
       if (!res.text) return;
       addMessage({ sender: 'bot', text: res.text, buttons: res.buttons, document: res.document });
@@ -70,11 +75,14 @@ export function useCopilotChat(speak: (text: string) => void) {
     async (text: string, isVoice = false, roleOverride?: string) => {
       if (!text || !text.trim()) return;
       addMessage({ sender: 'user', text, isVoice });
+      setPendingCount((count) => count + 1);
       try {
         const res = await sendChat(roleOverride ?? role, text);
         addBotResponse(res);
       } catch {
-        addMessage({ sender: 'bot', text: '⚠️ An error occurred communicating with the agent server.' });
+        addMessage({ sender: 'bot', text: 'An error occurred communicating with the agent server.' });
+      } finally {
+        setPendingCount((count) => count - 1);
       }
     },
     [addBotResponse, addMessage, role],
@@ -91,20 +99,26 @@ export function useCopilotChat(speak: (text: string) => void) {
   );
 
   const resetDemo = useCallback(async () => {
-    const res = await resetDemoApi(role);
-    if (res.error) {
-      addMessage({ sender: 'bot', text: `⚠️ Reset failed: ${res.error}` });
-      return;
+    setPendingCount((count) => count + 1);
+    try {
+      const res = await resetDemoApi(role);
+      if (res.error) {
+        addMessage({ sender: 'bot', text: `Reset failed: ${res.error}` });
+        return;
+      }
+      setMessages([
+        WELCOME,
+        { id: `reset-${Date.now()}`, sender: 'bot', text: res.text || 'Demo reset.', time: now() },
+      ]);
+    } finally {
+      setPendingCount((count) => count - 1);
     }
-    setMessages([
-      WELCOME,
-      { id: `reset-${Date.now()}`, sender: 'bot', text: res.text || '♻️ Demo reset.', time: now() },
-    ]);
   }, [addMessage, role]);
 
   return {
     role,
     messages,
+    isResponding: pendingCount > 0,
     resetDemo,
     inputText,
     setInputText,

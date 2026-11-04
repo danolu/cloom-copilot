@@ -11,6 +11,9 @@ interface UseVoiceNoteOptions {
 
 export function useVoiceNote({ role, handleSend, addMessage, addBotResponse }: UseVoiceNoteOptions) {
   const [isRecording, setIsRecording] = useState(false);
+  // MediaRecorder path only: covers the upload + transcription round-trip
+  // after recording stops, so the chat can show its typing indicator.
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -42,18 +45,26 @@ export function useVoiceNote({ role, handleSend, addMessage, addBotResponse }: U
         recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
         recorder.onstop = async () => {
           const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          setIsTranscribing(true);
           try {
             const res = await sendVoiceBlob(role, blob);
             if (res.heard) addMessage({ sender: 'user', text: res.heard, isVoice: true });
             addBotResponse(res);
           } catch {
-            alert('Could not transcribe audio.');
+            addMessage({
+              sender: 'bot',
+              text: 'Could not transcribe that voice note. Please try again, or type your message.',
+            });
+          } finally {
+            setIsTranscribing(false);
           }
         };
         mediaRecorderRef.current = recorder;
         recorder.start();
       })
-      .catch(() => alert('Microphone access denied.'));
+      .catch(() =>
+        addMessage({ sender: 'bot', text: 'Microphone access is unavailable. Please type your message instead.' }),
+      );
   };
 
   const stopRecording = () => {
@@ -76,5 +87,5 @@ export function useVoiceNote({ role, handleSend, addMessage, addBotResponse }: U
     else startRecording();
   };
 
-  return { isRecording, toggleRecording };
+  return { isRecording, isTranscribing, toggleRecording };
 }

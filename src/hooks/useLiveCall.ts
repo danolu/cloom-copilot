@@ -75,8 +75,8 @@ export function useLiveCall({ role, addMessage, addBotResponse }: UseLiveCallOpt
       if (!userText || !userText.trim()) return;
       setLiveCaption(`"${userText}"`);
       setOrbState('idle');
-      setCallStatus('Thinking with Muse Spark…');
-      addMessage({ sender: 'user', text: `🎙️ ${userText}`, isVoice: true });
+      setCallStatus('Thinking…');
+      addMessage({ sender: 'user', text: userText, isVoice: true });
 
       try {
         const res = await sendChat(role, userText);

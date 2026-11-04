@@ -1,21 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { ChatInput } from '../components/copilot/ChatInput';
+import { ChatPopover } from '../components/copilot/ChatPopover';
 import { CopilotHeader } from '../components/copilot/CopilotHeader';
-import { JudgeDashboard } from '../components/copilot/JudgeDashboard';
 import { LiveCallOverlay } from '../components/copilot/LiveCallOverlay';
-import { MessageList } from '../components/copilot/MessageList';
 import { RoleSwitcher } from '../components/copilot/RoleSwitcher';
 import { ROLE_PRESETS } from '../components/copilot/role-presets';
-import { SuggestionChips } from '../components/copilot/SuggestionChips';
+import { PropertyDashboard } from '../components/dashboard/PropertyDashboard';
+import { TooltipProvider } from '../components/ui/Tooltip';
 import { useCopilotChat } from '../hooks/useCopilotChat';
 import { useLiveCall } from '../hooks/useLiveCall';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import { useVoiceNote } from '../hooks/useVoiceNote';
 
 export default function CloomCopilotApp() {
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(false);
   const { speak } = useTextToSpeech(soundEnabled);
   const chat = useCopilotChat(speak);
   const voiceNote = useVoiceNote({
@@ -38,24 +37,30 @@ export default function CloomCopilotApp() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
-      <CopilotHeader
-        soundEnabled={soundEnabled}
-        setSoundEnabled={setSoundEnabled}
-        startVoiceCall={liveCall.startVoiceCall}
-      />
-      <RoleSwitcher role={chat.role} onRoleChange={chat.onRoleChange} onReset={chat.resetDemo} />
-      <JudgeDashboard />
-      <MessageList messages={chat.messages} chatEndRef={chat.chatEndRef} handleSend={chat.handleSend} speak={speak} />
-      <SuggestionChips activeRoleData={activeRoleData} handleSend={chat.handleSend} />
-      <ChatInput
-        inputText={chat.inputText}
-        setInputText={chat.setInputText}
-        isRecording={voiceNote.isRecording}
-        toggleRecording={voiceNote.toggleRecording}
-        handleSend={submitInput}
-      />
-      <LiveCallOverlay {...liveCall} />
-    </div>
+    <TooltipProvider delayDuration={300}>
+      <div className="app-shell">
+        <CopilotHeader
+          soundEnabled={soundEnabled}
+          setSoundEnabled={setSoundEnabled}
+          startVoiceCall={liveCall.startVoiceCall}
+        />
+        <RoleSwitcher role={chat.role} onRoleChange={chat.onRoleChange} onReset={chat.resetDemo} />
+        <PropertyDashboard />
+        <ChatPopover
+          messages={chat.messages}
+          isResponding={chat.isResponding || voiceNote.isTranscribing}
+          chatEndRef={chat.chatEndRef}
+          handleSend={chat.handleSend}
+          speak={speak}
+          activeRoleData={activeRoleData}
+          inputText={chat.inputText}
+          setInputText={chat.setInputText}
+          isRecording={voiceNote.isRecording}
+          toggleRecording={voiceNote.toggleRecording}
+          onSubmitInput={submitInput}
+        />
+        <LiveCallOverlay {...liveCall} />
+      </div>
+    </TooltipProvider>
   );
 }

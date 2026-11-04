@@ -1,4 +1,9 @@
-import { ShieldCheck } from 'lucide-react';
+'use client';
+
+import { FiRotateCcw, FiShield } from 'react-icons/fi';
+import { Button } from '../ui/Button';
+import { Tooltip } from '../ui/Tooltip';
+import { Typography } from '../ui/Typography';
 import { ROLE_PRESETS } from './role-presets';
 
 interface RoleSwitcherProps {
@@ -10,69 +15,28 @@ interface RoleSwitcherProps {
 export function RoleSwitcher({ role, onRoleChange, onReset }: RoleSwitcherProps) {
   const canReset = role === 'demo-admin' || role === 'demo-superadmin';
   return (
-    <div
-      style={{
-        background: '#f8fafc',
-        padding: '8px 14px',
-        borderBottom: '1px solid var(--border-subtle)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        fontSize: 12,
-      }}
-    >
-      <span
-        style={{
-          color: 'var(--text-secondary)',
-          fontSize: 11,
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 4,
-        }}
-      >
-        <ShieldCheck size={14} color="var(--accent-emerald)" />
-        Staff Role:
-      </span>
+    <div className="rolebar">
+      <Typography variant="overline" tone="muted" as="span" className="rolebar-label">
+        <FiShield aria-hidden /> Staff role
+      </Typography>
       <select
+        className="role-select"
         value={role}
         onChange={(e) => onRoleChange(e.target.value)}
-        style={{
-          background: '#ffffff',
-          color: 'var(--text-primary)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 6,
-          padding: '5px 8px',
-          fontSize: 12,
-          outline: 'none',
-          cursor: 'pointer',
-          fontWeight: 500,
-        }}
+        aria-label="Staff role"
       >
         {Object.entries(ROLE_PRESETS).map(([id, info]) => (
           <option key={id} value={id}>
-            {info.avatar} {info.name} — {info.title}
+            {info.name} - {info.title}
           </option>
         ))}
       </select>
       {canReset && onReset && (
-        <button
-          onClick={onReset}
-          title="Restore the seeded demo state for this session"
-          style={{
-            background: '#ffffff',
-            color: 'var(--text-primary)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 6,
-            padding: '5px 8px',
-            fontSize: 12,
-            cursor: 'pointer',
-            fontWeight: 500,
-          }}
-        >
-          ♻️ Reset demo
-        </button>
+        <Tooltip label="Restore the seeded demo state for this session">
+          <Button variant="secondary" size="sm" className="btn-reset" onClick={onReset}>
+            <FiRotateCcw aria-hidden /> Reset demo
+          </Button>
+        </Tooltip>
       )}
     </div>
   );

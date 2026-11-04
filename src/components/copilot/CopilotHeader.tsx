@@ -1,4 +1,10 @@
-import { Phone, Volume2, VolumeX } from 'lucide-react';
+'use client';
+
+import { FiPhone, FiVolume2, FiVolumeX } from 'react-icons/fi';
+import { Badge } from '../ui/Badge';
+import { Button, IconButton } from '../ui/Button';
+import { Tooltip } from '../ui/Tooltip';
+import { Typography } from '../ui/Typography';
 
 interface CopilotHeaderProps {
   soundEnabled: boolean;
@@ -8,90 +14,31 @@ interface CopilotHeaderProps {
 
 export function CopilotHeader({ soundEnabled, setSoundEnabled, startVoiceCall }: CopilotHeaderProps) {
   return (
-    <header
-      style={{
-        padding: '12px 16px',
-        background: 'var(--bg-card)',
-        borderBottom: '1px solid var(--border-subtle)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <img src="/icon.png" alt="Cloom Copilot" width={44} height={32} style={{ objectFit: 'contain' }} />
+    <header className="app-header">
+      <div className="brand">
+        <img src="/icon.png" alt="Cloom Copilot" width={44} height={32} />
         <div>
-          <div
-            style={{
-              fontSize: 15,
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
+          <Typography variant="h2" as="div" className="brand-name">
             Azure Palms Hotel
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 600,
-                background: '#ecfdf5',
-                color: 'var(--accent-emerald)',
-                padding: '2px 7px',
-                borderRadius: 10,
-                border: '1px solid #a7f3d0',
-              }}
-            >
-              Meta AI Demo
-            </span>
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-            Meta Muse Spark • Wonder • Voice Transcribe
-          </div>
+            <Badge tone="accent">Meta AI Demo</Badge>
+          </Typography>
+          <Typography variant="caption" tone="muted" as="div">
+            Your AI operations copilot
+          </Typography>
         </div>
       </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <button
-          onClick={() => setSoundEnabled(!soundEnabled)}
-          style={{
-            background: '#f1f5f9',
-            border: '1px solid var(--border-subtle)',
-            color: 'var(--text-primary)',
-            borderRadius: '50%',
-            width: 36,
-            height: 36,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-          }}
-          title={soundEnabled ? 'Mute voice responses' : 'Unmute voice responses'}
-        >
-          {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-        </button>
-
-        <button
-          onClick={startVoiceCall}
-          style={{
-            background: 'var(--accent-emerald)',
-            color: '#ffffff',
-            fontWeight: 600,
-            fontSize: 13,
-            border: 'none',
-            borderRadius: 18,
-            padding: '8px 14px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            cursor: 'pointer',
-            boxShadow: '0 1px 3px rgba(5, 150, 105, 0.2)',
-          }}
-        >
-          <Phone size={15} />
-          <span>Call Copilot</span>
-        </button>
+      <div className="header-actions">
+        <Tooltip label={soundEnabled ? 'Mute voice responses' : 'Unmute voice responses'}>
+          <IconButton
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            aria-label={soundEnabled ? 'Mute voice responses' : 'Unmute voice responses'}
+          >
+            {soundEnabled ? <FiVolume2 aria-hidden /> : <FiVolumeX aria-hidden />}
+          </IconButton>
+        </Tooltip>
+        <Button variant="primary" onClick={startVoiceCall}>
+          <FiPhone aria-hidden /> Call Copilot
+        </Button>
       </div>
     </header>
   );

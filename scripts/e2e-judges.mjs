@@ -18,8 +18,17 @@ try {
   const ctx = await browser.newContext({ viewport: { width: 420, height: 900 } });
   const page = await ctx.newPage();
   await page.goto(BASE, { waitUntil: 'networkidle' });
-  check('dashboard overview renders', await page.getByText('Judge overview').isVisible());
-  check('room grid shows 101', await page.getByText('101 occupied').isVisible());
+  check('dashboard overview renders', await page.getByText('Property overview').isVisible());
+  check('room grid shows 101', await page.locator('.room-chip', { hasText: '101 occupied' }).first().isVisible());
+  if (
+    !(await page
+      .getByLabel('Cloom Copilot chat')
+      .isVisible()
+      .catch(() => false))
+  ) {
+    await page.locator('.chat-trigger').click();
+  }
+  check('chat popover opens', await page.getByLabel('Cloom Copilot chat').isVisible());
 
   // Switch role -> briefing message appears (live Spark; wait for content, not a fixed sleep)
   const roleSelect = page.locator('select:has(option[value="demo-staff"])');
