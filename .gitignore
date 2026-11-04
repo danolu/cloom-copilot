@@ -1,0 +1,8 @@
+.env
+node_modules/
+.pnpm-store/
+dist/
+.next/
+tsconfig.tsbuildinfo
+.DS_Store
+output/
