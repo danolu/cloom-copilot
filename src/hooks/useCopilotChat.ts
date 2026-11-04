@@ -1,0 +1,117 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { resetDemo as resetDemoApi, sendChat } from '../lib/api';
+import { ROLE_PRESETS } from '../components/copilot/role-presets';
+import type { Message } from '../components/copilot/types';
+
+const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+const WELCOME: Message = {
+  id: 'welcome',
+  sender: 'bot',
+  text: '👋 Welcome to **Azure Palms Hotel Operations** powered by **Cloom Copilot** — built with Meta Muse models for the Meta AI Hackathon.\n\nEquipped with **Folio & Billing / POS** management, voice notes, role-gating, and hands-free voice calling.',
+  time: 'Just now',
+};
+
+const stored = <T>(key: string): T | null => {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch {
+    return null;
+  }
+};
+
+export function useCopilotChat(speak: (text: string) => void) {
+  const [role, setRole] = useState(() => stored<string>('cloom-role') || 'demo-admin');
+  const [messages, setMessages] = useState<Message[]>(() => stored<Message[]>('cloom-messages') || [WELCOME]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('cloom-role', JSON.stringify(role));
+    } catch {
+      /* storage unavailable */
+    }
+  }, [role]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('cloom-messages', JSON.stringify(messages.slice(-100)));
+    } catch {
+      /* storage unavailable */
+    }
+  }, [messages]);
+  const [inputText, setInputText] = useState('');
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const addMessage = useCallback((message: Omit<Message, 'id' | 'time'> & { id?: string; time?: string }) => {
+    setMessages((prev) => [
+      ...prev,
+      { ...message, id: message.id ?? `${Date.now()}-${prev.length}`, time: message.time ?? now() },
+    ]);
+  }, []);
+
+  const addBotResponse = useCallback(
+    (
+      res: { text?: string | null; buttons?: Message['buttons']; document?: Message['document'] },
+      shouldSpeak = true,
+    ) => {
+      if (!res.text) return;
+      addMessage({ sender: 'bot', text: res.text, buttons: res.buttons, document: res.document });
+      if (shouldSpeak) speak(res.text);
+    },
+    [addMessage, speak],
+  );
+
+  const handleSend = useCallback(
+    async (text: string, isVoice = false, roleOverride?: string) => {
+      if (!text || !text.trim()) return;
+      addMessage({ sender: 'user', text, isVoice });
+      try {
+        const res = await sendChat(roleOverride ?? role, text);
+        addBotResponse(res);
+      } catch {
+        addMessage({ sender: 'bot', text: '⚠️ An error occurred communicating with the agent server.' });
+      }
+    },
+    [addBotResponse, addMessage, role],
+  );
+
+  const onRoleChange = useCallback(
+    (newRole: string) => {
+      setRole(newRole);
+      const roleInfo = ROLE_PRESETS[newRole] || ROLE_PRESETS['demo-admin'];
+      addMessage({ sender: 'bot', text: `Switched identity to **${roleInfo.name} — ${roleInfo.title}**.` });
+      void handleSend('briefing', false, newRole);
+    },
+    [addMessage, handleSend],
+  );
+
+  const resetDemo = useCallback(async () => {
+    const res = await resetDemoApi(role);
+    if (res.error) {
+      addMessage({ sender: 'bot', text: `⚠️ Reset failed: ${res.error}` });
+      return;
+    }
+    setMessages([
+      WELCOME,
+      { id: `reset-${Date.now()}`, sender: 'bot', text: res.text || '♻️ Demo reset.', time: now() },
+    ]);
+  }, [addMessage, role]);
+
+  return {
+    role,
+    messages,
+    resetDemo,
+    inputText,
+    setInputText,
+    chatEndRef,
+    addMessage,
+    addBotResponse,
+    handleSend,
+    onRoleChange,
+  };
+}
