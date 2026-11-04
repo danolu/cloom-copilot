@@ -1,0 +1,390 @@
+// Cloom Copilot — agent-facing subset of Cloom's production Prisma schema.
+//
+// This mirrors the real backend (packages/db/prisma/schema.prisma in Cloom)
+// for every model the copilot's tools touch, so the agent is built against
+// Cloom's actual data shape: same model names, same field names, same enums.
+// The hackathon demo runs in-memory (src/server/hotel) against TypeScript
+// types that match these models 1:1; in production the HotelInstance tool
+// surface becomes a REST/Prisma adapter and nothing in the agent changes.
+//
+// Money is always integer minor units. Every model is tenant-scoped.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  SUPER_ADMIN
+  MANAGER
+  SUPERVISOR
+  FRONT_DESK
+  HOUSEKEEPING
+  ACCOUNTANT
+  CASHIER
+  RESTAURANT_MANAGER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
+// Note: the demo's tool boundary uses friendlier labels at the edges
+// (clean ≈ AVAILABLE, blocked ≈ MAINTENANCE); storage uses these values.
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+  DIRTY
+}
+
+enum ReservationStatus {
+  COURTESY_HOLD
+  PENDING
+  CONFIRMED
+  AWAITING_CHECKIN
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  NO_SHOW
+}
+
+enum ReservationSource {
+  WALK_IN
+  OTA
+  PHONE
+  WEBSITE
+  CORPORATE
+  AGENT
+}
+
+enum OfferType {
+  RATE_PLAN
+  PACKAGE
+  PROMOTION
+}
+
+enum OfferDiscountType {
+  NONE
+  FIXED
+  PERCENTAGE
+  STAY_N_PAY_N
+}
+
+enum OfferStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum PaymentMethod {
+  CARD
+  TRANSFER
+  CASH
+  ONLINE
+  POS
+  ROOM_CHARGE
+  LOYALTY_CREDIT
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum RoomTaskKind {
+  GENERAL
+  TURNOVER
+  MID_STAY
+}
+
+enum GuestRequestKind {
+  TOWELS
+  CLEANING
+  MAINTENANCE
+}
+
+enum Currency {
+  NGN
+  USD
+  EUR
+  GBP
+}
+
+model Tenant {
+  id         String        @id @default(cuid())
+  name       String
+  users      User[]
+  guests     Guest[]
+  rooms      Room[]
+  roomTypes  RoomType[]
+  reservations Reservation[]
+  offers     Offer[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime?     @updatedAt
+
+  @@index([id])
+}
+
+model User {
+  id            String     @id @default(cuid())
+  firstName     String?
+  lastName      String?
+  email         String?    @unique
+  // WhatsApp identity for the chat assistant (E.164 digits, no '+').
+  whatsappPhone String?    @unique
+  status        UserStatus @default(ACTIVE)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime?  @updatedAt
+  deletedAt     DateTime?
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+model Guest {
+  id        String  @id @default(cuid())
+  title     String
+  firstName String
+  lastName  String
+  email     String?
+  phone     String
+  country   String?
+  notes     String?
+
+  reservations Reservation[]
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+model RoomType {
+  id               String  @id @default(cuid())
+  name             String
+  description      String?
+  rate             Int
+  adultsCapacity   Int     @default(2)
+  childrenCapacity Int     @default(1)
+  cautionDeposit   Int     @default(0)
+
+  rooms  Room[]
+  offers Offer[]
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([name, tenantId])
+  @@index([tenantId])
+}
+
+model Room {
+  id         String     @id @default(cuid())
+  number     String
+  status     RoomStatus @default(AVAILABLE)
+  price      Int?
+  condition  String?
+  notes      String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime?  @updatedAt
+  deletedAt  DateTime?
+
+  roomTypeId String
+  roomType   RoomType @relation(fields: [roomTypeId], references: [id])
+
+  reservations      ReservationRoom[]
+  tasks             RoomTask[]
+  guestRequests     GuestRequest[]
+  maintenanceBlocks MaintenanceBlock[]
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([number, tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, roomTypeId])
+}
+
+model Reservation {
+  id                     String            @id @default(cuid())
+  reference              String            @unique // CLOO-YYYYMM-000001
+  source                 ReservationSource @default(WALK_IN)
+  checkin                DateTime          @db.Date
+  checkout               DateTime          @db.Date
+  adults                 Int               @default(1)
+  children               Int               @default(0)
+  cost                   Int
+  discount               Int               @default(0)
+  extraCharge            Int               @default(0)
+  extraChargeDescription String?
+  payable                Int
+  paymentMethod          PaymentMethod?
+  notes                  String?
+  status                 ReservationStatus @default(PENDING)
+  checkedInAt            DateTime?
+  checkedOutAt           DateTime?
+  cancelledAt            DateTime?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime?         @updatedAt
+  deletedAt              DateTime?
+  // Denormalized contact for walk-in / phone bookings without a Guest record.
+  guestName              String?
+  guestPhone             String?
+
+  guestId        String?
+  guest          Guest?  @relation(fields: [guestId], references: [id], onDelete: Restrict)
+  appliedOfferId String?
+  appliedOffer   Offer?  @relation(fields: [appliedOfferId], references: [id], onDelete: SetNull)
+  createdById    String?
+
+  rooms    ReservationRoom[]
+  payments Payment[]
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, checkin, checkout])
+  @@index([tenantId, status])
+  @@index([tenantId, checkin])
+  @@index([guestId])
+}
+
+model ReservationRoom {
+  reservationId String
+  roomId        String
+  status        ReservationStatus @default(AWAITING_CHECKIN)
+  checkedInAt   DateTime?
+  checkedOutAt  DateTime?
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  room        Room        @relation(fields: [roomId], references: [id])
+
+  @@id([reservationId, roomId])
+}
+
+model Offer {
+  id              String            @id @default(cuid())
+  name            String
+  code            String?
+  description     String?
+  type            OfferType
+  status          OfferStatus       @default(ACTIVE)
+  discountType    OfferDiscountType @default(NONE)
+  discountValue   Int               @default(0)
+  rateOverride    Int?
+  minNights       Int?
+  maxRedemptions  Int?
+  redeemedCount   Int               @default(0)
+  startsAt        DateTime?
+  endsAt          DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+
+  roomTypeId String?
+  roomType   RoomType? @relation(fields: [roomTypeId], references: [id], onDelete: SetNull)
+
+  reservations Reservation[]
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, code])
+  @@index([tenantId, status])
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  amount        Int
+  method        PaymentMethod
+  createdAt     DateTime      @default(now())
+
+  reservationId String?
+  reservation   Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  recordedById  String?
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([reservationId])
+}
+
+model RoomTask {
+  id          String       @id @default(cuid())
+  title       String
+  kind        RoomTaskKind @default(GENERAL)
+  status      TaskStatus   @default(PENDING)
+  priority    TaskPriority @default(MEDIUM)
+  createdAt   DateTime     @default(now())
+  completedAt DateTime?
+
+  roomId           String?
+  room             Room?   @relation(fields: [roomId], references: [id])
+  assignedToId     String?
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+}
+
+model GuestRequest {
+  id        String           @id @default(cuid())
+  kind      GuestRequestKind
+  text      String
+  createdAt DateTime         @default(now())
+
+  roomId String?
+  room   Room?   @relation(fields: [roomId], references: [id])
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+}
+
+model MaintenanceBlock {
+  id        String    @id @default(cuid())
+  reason    String
+  startsAt  DateTime
+  endsAt    DateTime?
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id])
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, startsAt])
+}
+
+model Setting {
+  id    String @id @default(cuid())
+  key   String
+  value String
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key])
+}

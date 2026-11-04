@@ -32,12 +32,37 @@ export interface Arrival {
   vip: boolean;
 }
 
+export type ReservationStatus =
+  | 'COURTESY_HOLD'
+  | 'PENDING'
+  | 'CONFIRMED'
+  | 'AWAITING_CHECKIN'
+  | 'CHECKED_IN'
+  | 'CHECKED_OUT'
+  | 'CANCELLED'
+  | 'NO_SHOW';
+
+export type ReservationSource = 'WALK_IN' | 'OTA' | 'PHONE' | 'WEBSITE' | 'CORPORATE' | 'AGENT';
+
+// Mirrors Cloom's Prisma `Reservation` model (see prisma/schema.prisma):
+// checkin/checkout are dates, money is integer cost/discount/payable,
+// and `reference` is the human booking code (CLOO-YYYYMM-000001).
 export interface Reservation {
   id: string;
-  guest: string;
+  reference: string;
+  source: ReservationSource;
+  guestName: string;
+  guestPhone?: string;
+  checkin: string; // ISO date, yyyy-mm-dd
+  checkout: string; // ISO date, yyyy-mm-dd
+  nights: number; // derived: checkout - checkin
+  adults: number;
+  children: number;
   roomType: string;
-  nights: number;
-  total: number;
+  cost: number;
+  discount: number;
+  payable: number;
+  status: ReservationStatus;
 }
 
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH';
