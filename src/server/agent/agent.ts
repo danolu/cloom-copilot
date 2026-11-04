@@ -37,7 +37,7 @@ export interface AgentInstance {
   userOf: (userId: string) => User | null;
 }
 
-// Conversation engine for the hotel operations copilot.
+// Conversation engine for the property operations copilot.
 // Role gating + confirm-before-write live here, so no caller (and no model) can bypass them.
 export type DecideFn = (text: string, toolSchemas: ToolSchema[], history: ChatTurn[]) => Promise<Decision>;
 

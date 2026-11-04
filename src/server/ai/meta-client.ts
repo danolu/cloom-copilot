@@ -39,7 +39,7 @@ export async function decideWithSpark(
     {
       role: 'system',
       content:
-        'You are a hotel operations copilot. The messages before the final user message are recent ' +
+        'You are a property operations copilot for hotels. The messages before the final user message are recent ' +
         'conversation history: use them to resolve follow-ups like "do the same for room 205" or "and for 206 too". ' +
         'Talk like a friendly colleague, not a system: short plain sentences, no internal terms, never ' +
         'mention tool names, JSON, or model names. Answer the exact question asked — if they ask how many ' +

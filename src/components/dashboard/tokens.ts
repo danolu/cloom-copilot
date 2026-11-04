@@ -3,18 +3,19 @@
 export interface RoomStatusMeta {
   label: string;
   color: string;
+  background: string;
 }
 
 export const ROOM_STATUS_META: Record<string, RoomStatusMeta> = {
-  occupied: { label: 'occupied', color: '#2563eb' },
-  clean: { label: 'clean', color: '#059669' },
-  dirty: { label: 'dirty', color: '#dc2626' },
-  blocked: { label: 'blocked', color: '#7c3aed' },
-  inspected: { label: 'inspected', color: '#0891b2' },
+  occupied: { label: 'occupied', color: '#2563eb', background: '#eff6ff' },
+  clean: { label: 'clean', color: '#059669', background: '#ecfdf5' },
+  dirty: { label: 'dirty', color: '#dc2626', background: '#fef2f2' },
+  blocked: { label: 'blocked', color: '#7c3aed', background: '#f5f3ff' },
+  inspected: { label: 'inspected', color: '#0891b2', background: '#ecfeff' },
 };
 
 export function roomStatusMeta(status: string): RoomStatusMeta {
-  return ROOM_STATUS_META[status] ?? { label: status, color: '#64748b' };
+  return ROOM_STATUS_META[status] ?? { label: status, color: '#64748b', background: '#f1f5f9' };
 }
 
 export type StatTone = 'blue' | 'green' | 'amber' | 'violet' | 'red' | 'cyan';

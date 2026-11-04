@@ -11,6 +11,7 @@ import {
   FiTrendingUp,
 } from 'react-icons/fi';
 import { useHotelSnapshot } from '../../hooks/useHotelSnapshot';
+import { formatMoney } from '../../lib/money';
 import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import { Skeleton } from '../ui/Skeleton';
@@ -27,12 +28,14 @@ function DashboardSkeleton() {
       <div className="stat-grid">
         {Array.from({ length: 6 }, (_, index) => (
           <div className="stat-card" key={index}>
-            <Skeleton width={38} height={38} className="skeleton-icon" />
-            <div className="skeleton-stat-copy">
-              <Skeleton width="58%" height={11} />
-              <Skeleton width="72%" height={22} />
-              <Skeleton width="48%" height={11} />
+            <div className="stat-card-top">
+              <Skeleton width="52%" height={11} />
+              <Skeleton width={34} height={34} className="skeleton-icon" />
             </div>
+            <Skeleton width="46%" height={26} />
+            <Skeleton width="68%" height={11} />
+            <Skeleton width="100%" height={1} />
+            <Skeleton width="82%" height={11} />
           </div>
         ))}
       </div>
@@ -43,8 +46,11 @@ function DashboardSkeleton() {
           <Skeleton width={118} height={30} className="skeleton-chip" />
           <Skeleton width={96} height={30} className="skeleton-chip" />
           <Skeleton width={122} height={30} className="skeleton-chip" />
-          <Skeleton width={100} height={30} className="skeleton-chip" />
-          <Skeleton width={112} height={30} className="skeleton-chip" />
+        </div>
+        <div className="skeleton-room-grid">
+          {Array.from({ length: 8 }, (_, index) => (
+            <Skeleton key={index} width="100%" height={104} className="skeleton-room" />
+          ))}
         </div>
       </div>
       <div className="section-card skeleton-section">
@@ -57,32 +63,33 @@ function DashboardSkeleton() {
   );
 }
 
-// Primary surface of the app: live property state stays at the top, and the
-// copilot chat floats over it as a popover instead of pushing it down.
 export function PropertyDashboard() {
   const { snapshot, refresh, lastUpdated, loadError } = useHotelSnapshot();
+
+  const occupiedRooms = snapshot?.rooms.filter((room) => room.status === 'occupied') ?? [];
+  const readyRooms = snapshot?.rooms.filter((room) => room.status === 'clean' || room.status === 'inspected') ?? [];
+  const dirtyRooms = snapshot?.rooms.filter((room) => room.status === 'dirty') ?? [];
+  const occupancyPct = snapshot?.rooms.length ? Math.round((occupiedRooms.length / snapshot.rooms.length) * 100) : 0;
+  const openFolios = snapshot?.folios.filter((folio) => folio.balance > 0) ?? [];
+  const openFolioTotal = openFolios.reduce((sum, folio) => sum + folio.balance, 0);
+  const highPriorityTasks = snapshot?.tasks.filter((task) => task.priority.toLowerCase() === 'high') ?? [];
+  const taskDepartments = new Set(snapshot?.tasks.map((task) => task.assignee)).size;
+  const nextArrival = snapshot ? [...snapshot.arrivals].sort((a, b) => a.eta.localeCompare(b.eta))[0] : undefined;
+  const vipArrivals = snapshot?.arrivals.filter((arrival) => arrival.vip).length ?? 0;
+  const attentionCount = snapshot ? snapshot.blockedDepartures + snapshot.pendingApprovals : 0;
 
   return (
     <main className="dashboard">
       <div className="dashboard-inner">
         <div className="dashboard-head">
-          <div>
-            <Typography variant="display">Property overview</Typography>
-            <Typography variant="body-sm" tone="muted" className="dashboard-subtitle">
-              {snapshot
-                ? `${snapshot.hotel} - live property state, updated by every copilot action.`
-                : loadError
-                  ? 'Live property state unavailable — retrying automatically.'
-                  : 'Loading live property state…'}
-            </Typography>
-          </div>
+          <Typography variant="display">Property overview</Typography>
           <div className="dashboard-head-actions">
             {snapshot && (
-              <span
-                className="live-dot"
-                title={lastUpdated ? `Last updated ${lastUpdated.toLocaleTimeString()}` : undefined}
-              >
+              <span className="live-dot">
                 Live
+                {lastUpdated
+                  ? ` · updated ${lastUpdated.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
+                  : ''}
               </span>
             )}
             <Tooltip label="Refresh property state">
@@ -94,7 +101,7 @@ export function PropertyDashboard() {
         </div>
 
         {!snapshot && !loadError && (
-          <div role="status" aria-live="polite" aria-label="Loading live property state">
+          <div role="status" aria-live="polite" aria-label="Loading property overview">
             <DashboardSkeleton />
           </div>
         )}
@@ -109,7 +116,7 @@ export function PropertyDashboard() {
               </Button>
             }
           >
-            Live property state is not available yet. It retries automatically every few seconds.
+            Property state is not available yet. It retries automatically every few seconds.
           </EmptyState>
         )}
 
@@ -117,49 +124,65 @@ export function PropertyDashboard() {
           <>
             <div className="stat-grid">
               <StatCard
+                featured
                 label="Occupancy"
-                value={snapshot.occupancy}
-                hint="rooms occupied"
+                value={`${occupancyPct}%`}
+                hint={`${occupiedRooms.length} of ${snapshot.rooms.length} rooms occupied`}
+                progress={occupancyPct}
+                detail={`${snapshot.rooms.length - occupiedRooms.length} available · ${readyRooms.length} ready to sell`}
                 icon={<FiHome />}
                 tone="blue"
               />
               <StatCard
                 label="Revenue today"
-                value={`${snapshot.currency} ${snapshot.revenueToday}`}
+                value={formatMoney(snapshot.revenueToday, snapshot.currency)}
                 hint="posted to folios"
+                detail={`${formatMoney(openFolioTotal, snapshot.currency)} open across ${openFolios.length} ${openFolios.length === 1 ? 'folio' : 'folios'}`}
                 icon={<FiTrendingUp />}
                 tone="green"
-              />
-              <StatCard
-                label="Open tasks"
-                value={snapshot.openTasks}
-                hint="across departments"
-                icon={<FiCheckSquare />}
-                tone="amber"
-              />
-              <StatCard
-                label="Approvals"
-                value={snapshot.pendingApprovals}
-                hint="awaiting sign-off"
-                icon={<FiClipboard />}
-                tone="violet"
-              />
-              <StatCard
-                label="Blocked departures"
-                value={snapshot.blockedDepartures}
-                hint="unpaid folio balances"
-                icon={<FiAlertTriangle />}
-                tone="red"
               />
               <StatCard
                 label="Arrivals"
                 value={snapshot.arrivals.length}
                 hint="expected today"
+                detail={
+                  nextArrival
+                    ? `Next ${nextArrival.eta} · ${nextArrival.guest}${vipArrivals ? ` · ${vipArrivals} VIP` : ''}`
+                    : 'No arrivals expected'
+                }
                 icon={<FiCalendar />}
                 tone="cyan"
               />
+              <StatCard
+                label="Turnovers"
+                value={dirtyRooms.length}
+                hint="rooms to clean"
+                detail={
+                  dirtyRooms.length
+                    ? `Rooms ${dirtyRooms.map((room) => room.number).join(' · ')}`
+                    : 'All rooms turned over'
+                }
+                icon={<FiRefreshCw />}
+                tone="amber"
+              />
+              <StatCard
+                label="Open tasks"
+                value={snapshot.openTasks}
+                hint="across departments"
+                detail={`${highPriorityTasks.length} high priority · ${taskDepartments} ${taskDepartments === 1 ? 'department' : 'departments'}`}
+                icon={<FiCheckSquare />}
+                tone="violet"
+              />
+              <StatCard
+                label="Needs attention"
+                value={attentionCount}
+                hint="items need action"
+                detail={`${snapshot.blockedDepartures} blocked departures · ${snapshot.pendingApprovals} approvals`}
+                icon={attentionCount ? <FiAlertTriangle /> : <FiClipboard />}
+                tone={snapshot.blockedDepartures ? 'red' : attentionCount ? 'amber' : 'green'}
+              />
             </div>
-            <RoomGrid rooms={snapshot.rooms} />
+            <RoomGrid rooms={snapshot.rooms} folios={snapshot.folios} currency={snapshot.currency} />
             <DashboardPanels snapshot={snapshot} />
           </>
         )}

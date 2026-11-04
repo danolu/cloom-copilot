@@ -1,7 +1,7 @@
 'use client';
 
 import * as Select from '@radix-ui/react-select';
-import { FiCheck, FiChevronDown, FiRotateCcw, FiShield } from 'react-icons/fi';
+import { FiCheck, FiChevronDown, FiRotateCcw, FiUsers } from 'react-icons/fi';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { Typography } from '../ui/Typography';
@@ -19,10 +19,10 @@ export function RoleSwitcher({ role, onRoleChange, onReset }: RoleSwitcherProps)
   return (
     <div className="rolebar">
       <Typography variant="overline" tone="muted" as="span" className="rolebar-label">
-        <FiShield aria-hidden /> Staff role
+        <FiUsers aria-hidden /> Role switcher
       </Typography>
       <Select.Root value={role} onValueChange={onRoleChange}>
-        <Select.Trigger className="select-trigger" aria-label="Staff role">
+        <Select.Trigger className="select-trigger" aria-label="Role switcher">
           <span className="select-trigger-value">
             {active.name} - {active.title}
           </span>

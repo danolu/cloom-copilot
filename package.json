@@ -1,10 +1,9 @@
 {
   "name": "cloom-copilot",
   "version": "0.1.0",
-  "description": "Voice & Chat AI Hotel Operations Copilot, powered by Meta models (Muse Spark, Muse Wonder, Muse Voice Transcribe)",
+  "description": "Voice & Chat Property Operations Copilot for hotels, powered by Meta models (Muse Spark, Muse Wonder, Muse Voice Transcribe)",
   "type": "module",
-  "private": false,
-  "license": "MIT",
+  "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",

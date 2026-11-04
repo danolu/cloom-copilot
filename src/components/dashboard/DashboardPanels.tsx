@@ -16,6 +16,7 @@ import { Card } from '../ui/Card';
 import { EmptyState } from '../ui/EmptyState';
 import { Typography } from '../ui/Typography';
 import type { HotelSnapshot } from '../../lib/api';
+import { formatMoney } from '../../lib/money';
 
 // Folios, arrivals/tasks, approvals and the audit trail behind Radix Tabs,
 // so the dashboard stays scannable instead of stacking every list at once.
@@ -60,9 +61,7 @@ export function DashboardPanels({ snapshot }: { snapshot: HotelSnapshot }) {
                   </div>
                 </div>
                 <div className="panel-row-side">
-                  <span className="amount">
-                    {snapshot.currency} {folio.balance}
-                  </span>
+                  <span className="amount">{formatMoney(folio.balance, snapshot.currency)}</span>
                   <Badge tone={statusTone(folio.status)}>{folio.status}</Badge>
                 </div>
               </div>

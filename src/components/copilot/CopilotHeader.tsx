@@ -1,7 +1,6 @@
 'use client';
 
 import { FiPhone, FiVolume2, FiVolumeX } from 'react-icons/fi';
-import { Badge } from '../ui/Badge';
 import { Button, IconButton } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { Typography } from '../ui/Typography';
@@ -20,10 +19,9 @@ export function CopilotHeader({ soundEnabled, setSoundEnabled, startVoiceCall }:
         <div>
           <Typography variant="h2" as="div" className="brand-name">
             Azure Palms Hotel
-            <Badge tone="accent">Meta AI Demo</Badge>
           </Typography>
           <Typography variant="caption" tone="muted" as="div">
-            Your AI operations copilot
+            Your property operations copilot
           </Typography>
         </div>
       </div>
