@@ -9,7 +9,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "tsx --test tests/agent/agent.test.ts tests/agent/batch.test.ts tests/agent/draft.test.ts tests/agent/history.test.ts tests/agent/pending.test.ts tests/ai/audio.test.ts tests/api/routes.test.ts tests/frontdesk/agentic.test.ts tests/permissions/matrix.test.ts tests/session/session.test.ts tests/tools/errors.test.ts tests/tools/invariants.test.ts tests/tools/reservation.test.ts tests/tools/triage.test.ts",
+    "test": "tsx --test tests/agent/agent.test.ts tests/agent/batch.test.ts tests/agent/draft.test.ts tests/agent/format.test.ts tests/agent/history.test.ts tests/agent/pending.test.ts tests/ai/audio.test.ts tests/api/routes.test.ts tests/frontdesk/agentic.test.ts tests/permissions/matrix.test.ts tests/session/session.test.ts tests/tools/errors.test.ts tests/tools/invariants.test.ts tests/tools/reservation.test.ts tests/tools/triage.test.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
