@@ -78,9 +78,19 @@ export interface HotelTools {
   complete_task: (args: { id: string }) => Promise<{ ok: boolean; task: Task }>;
   decide_approval: (args: { id: string; decision: string }) => Promise<{ ok: boolean; approval: Approval }>;
   create_reservation: (args: {
-    guest: string;
-    roomType?: string;
+    guest?: string;
+    guestName?: string;
+    guestPhone?: string;
+    phone?: string;
+    checkin?: string;
     nights?: number;
+    roomType?: string;
+    adults?: number;
+    children?: number;
+    discountPercent?: number;
+    discountAmount?: number;
+    discount?: number;
+    source?: Reservation['source'];
   }) => Promise<{ ok: boolean; reservation: Reservation }>;
   bulk_update_rates: (args: {
     percent: number;

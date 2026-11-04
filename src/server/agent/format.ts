@@ -22,7 +22,12 @@ export const formatToolResult = (name: string, r: any): string => {
   if (name === 'list_reservations')
     return (
       '*Reservations*\n' +
-      r.reservations.map((x: any) => `• ${x.id} ${x.guest} — ${x.roomType}, ${x.nights}n, $${x.total}`).join('\n')
+      r.reservations
+        .map(
+          (x: any) =>
+            `• ${x.reference} ${x.guestName} — ${x.roomType}, ${x.checkin} → ${x.checkout} (${x.nights}n), $${x.payable}${x.discount ? ` after $${x.discount} discount` : ''} [${x.status}]`,
+        )
+        .join('\n')
     );
   if (name === 'get_revenue')
     return `*Revenue*\nToday: ${r.currency} ${r.today}\nYesterday: ${r.currency} ${r.yesterday}\nThis week: ${r.currency} ${r.week} (last week ${r.currency} ${r.lastWeek})`;
@@ -69,7 +74,7 @@ export const formatToolResult = (name: string, r: any): string => {
   if (name === 'complete_task') return `✅ ${r.task.id} done: ${r.task.title}`;
   if (name === 'decide_approval') return `✅ ${r.approval.id} ${r.approval.status}: ${r.approval.title}`;
   if (name === 'create_reservation')
-    return `✅ Reservation ${r.reservation.id}: ${r.reservation.guest}, ${r.reservation.roomType}, ${r.reservation.nights}n — $${r.reservation.total}`;
+    return `✅ Reservation ${r.reservation.reference}: ${r.reservation.guestName}, ${r.reservation.roomType}, ${r.reservation.checkin} → ${r.reservation.checkout} (${r.reservation.nights}n) — $${r.reservation.payable}${r.reservation.discount ? ` (saved $${r.reservation.discount})` : ''} [${r.reservation.status}]`;
   if (name === 'bulk_update_rates')
     return `✅ Rates ${r.percent > 0 ? '+' : ''}${r.percent}% applied to ${r.changed} rooms (${r.rooms.join(', ')}). Reply "undo" to revert.`;
   if (name === 'add_team_member')

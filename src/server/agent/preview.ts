@@ -1,4 +1,6 @@
 import type { HotelInstance } from '../hotel/hotel';
+import { addDaysISO } from '../hotel/dates';
+import { priceReservation } from '../hotel/pricing';
 
 // Human-readable preview for bulk/high-impact writes before confirming.
 export function previewTool(tool: string, args: Record<string, any> | undefined, hotel: HotelInstance): string {
@@ -16,6 +18,28 @@ export function previewTool(tool: string, args: Record<string, any> | undefined,
         .join('\n') +
       (affected.length > 6 ? `\n…and ${affected.length - 6} more` : '')
     );
+  }
+  if (tool === 'create_reservation') {
+    const guest = args?.guestName || args?.guest || 'Guest';
+    try {
+      const p = priceReservation(
+        hotel.state.rooms,
+        args?.roomType || hotel.state.rooms[0].type,
+        args?.nights || 1,
+        args?.discountPercent,
+        args?.discountAmount ?? args?.discount,
+      );
+      const checkin = args?.checkin || 'today';
+      const checkout = args?.checkin ? addDaysISO(args.checkin, p.nights) : '';
+      return (
+        `*Confirm Reservation:* ${guest} — ${p.roomType}, ${checkin}${checkout ? ` → ${checkout}` : ''} (${p.nights} night${p.nights > 1 ? 's' : ''})\n` +
+        `${p.nights} × $${p.rate} = $${p.cost}` +
+        (p.discount ? `\nDiscount: −$${p.discount}` : '') +
+        `\n*Payable: $${p.payable}*`
+      );
+    } catch {
+      return `*Confirm Reservation:* ${guest} — ${args?.roomType || ''}, ${args?.nights || 1} night(s)`;
+    }
   }
   if (tool === 'post_folio_charge') {
     return `*Confirm Charge:* Post $${args?.amount} (${args?.description || 'Incidentals'}) to Room ${args?.room} Folio`;

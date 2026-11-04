@@ -241,7 +241,7 @@ export function createFrontdeskTools(
       const folio = state.folios[r.number];
       const guest = folio?.guest || `Guest in ${r.number}`;
       const conflicts = state.reservations.filter(
-        (res) => res.roomType === r.type && res.guest.toLowerCase() !== guest.toLowerCase(),
+        (res) => res.roomType === r.type && res.guestName.toLowerCase() !== guest.toLowerCase(),
       );
       const canExtend = conflicts.length === 0;
       const suggestedRoom = canExtend
@@ -254,7 +254,7 @@ export function createFrontdeskTools(
         guest,
         nights: nights || 1,
         canExtendWithoutConflict: canExtend,
-        conflicts: conflicts.map((c) => `${c.id}: ${c.guest} (${c.roomType}, ${c.nights}n)`),
+        conflicts: conflicts.map((c) => `${c.reference}: ${c.guestName} (${c.roomType}, ${c.nights}n)`),
         suggestedRelocationRoom: suggestedRoom,
       };
     },

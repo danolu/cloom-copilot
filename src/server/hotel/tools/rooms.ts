@@ -1,6 +1,8 @@
 import type { HotelContext } from '../context';
 import type { HotelTools } from '../tools';
 import type { Reservation, RoomStatus, Task } from '../../../shared/types/hotel';
+import { addDaysISO, todayISO } from '../dates';
+import { priceReservation } from '../pricing';
 
 export function createRoomTools(
   ctx: HotelContext,
@@ -117,23 +119,63 @@ export function createRoomTools(
       log('admin', 'block_room', `${room}: ${reason || 'blocked'}`);
       return { ok: true, room: r.number, status: r.status };
     },
-    create_reservation: async ({ guest, roomType, nights }: { guest: string; roomType?: string; nights?: number }) => {
-      const type = state.rooms.find((r) => r.type === roomType) || state.rooms[0];
+    create_reservation: async (args: {
+      guest?: string;
+      guestName?: string;
+      guestPhone?: string;
+      phone?: string;
+      checkin?: string;
+      nights?: number;
+      roomType?: string;
+      adults?: number;
+      children?: number;
+      discountPercent?: number;
+      discountAmount?: number;
+      discount?: number;
+      source?: Reservation['source'];
+    }) => {
+      const guestName = String(args.guestName || args.guest || '').trim();
+      if (!guestName) throw new Error('Guest name is required for a reservation');
+      const checkin = args.checkin || todayISO();
+      const pricing = priceReservation(
+        state.rooms,
+        args.roomType || state.rooms[0].type,
+        args.nights || 1,
+        args.discountPercent,
+        args.discountAmount ?? args.discount,
+      );
+      // Cloom reference format: CLOO-YYYYMM-000001 (sequence per property).
+      const seq =
+        state.reservations.reduce((max, r) => {
+          const n = parseInt((r.reference || '').split('-').pop() || '0', 10);
+          return Number.isNaN(n) ? max : Math.max(max, n);
+        }, 0) + 1;
+      const reference = `CLOO-${checkin.slice(0, 4)}${checkin.slice(5, 7)}-${String(seq).padStart(6, '0')}`;
       const res: Reservation = {
-        id: `R-${state.reservations.length + 1}`,
-        guest,
-        roomType: type.type,
-        nights: nights || 1,
-        total: type.rate * (nights || 1),
+        id: reference,
+        reference,
+        source: args.source || 'AGENT',
+        guestName,
+        guestPhone: args.guestPhone || args.phone,
+        checkin,
+        checkout: addDaysISO(checkin, pricing.nights),
+        nights: pricing.nights,
+        adults: args.adults || 1,
+        children: args.children || 0,
+        roomType: pricing.roomType,
+        cost: pricing.cost,
+        discount: pricing.discount,
+        payable: pricing.payable,
+        status: 'CONFIRMED',
       };
       state.reservations.push(res);
       pushUndo({
-        label: `reservation ${res.id}`,
+        label: `reservation ${res.reference}`,
         undo: () => {
           state.reservations = state.reservations.filter((x) => x.id !== res.id);
         },
       });
-      log('admin', 'create_reservation', `${guest} ${res.id}`);
+      log('admin', 'create_reservation', `${guestName} ${res.reference}`);
       return { ok: true, reservation: res };
     },
   };
