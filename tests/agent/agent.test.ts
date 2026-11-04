@@ -113,7 +113,7 @@ test('the same agent serves in-app copilot and voice queries', async () => {
   const agent = make(createHotel(), { tool: 'get_settings', args: {} });
   const viaCopilot = await agent.handle(owner, 'show settings', null);
   assert.ok(viaCopilot.text);
-  assert.match(viaCopilot.text, /checkInTime/);
+  assert.match(viaCopilot.text, /Check-in time/);
 });
 
 test('duplicate message id is ignored (idempotency)', async () => {

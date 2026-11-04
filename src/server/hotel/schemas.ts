@@ -1,12 +1,13 @@
 import type { ToolSchema } from '../../shared/types/agent';
 
 export const TOOL_SCHEMAS: ToolSchema[] = Object.entries({
-  get_dashboard: 'Raw property stats only: occupancy, arrivals, tasks, approvals, revenue today',
+  get_dashboard:
+    'Property counts and totals: occupancy, arrivals, tasks, approvals, revenue today — use for "how many…" questions',
   get_role_briefing:
     'Personalized briefing for the current user — use whenever they ask for a briefing, morning update, their summary, or what to focus on {role}',
   list_arrivals: "Today's arriving guests",
   list_tasks: 'Open tasks',
-  list_rooms: 'All rooms with status and rates',
+  list_rooms: 'Full room list with status and rates — only when they ask to see or list the rooms',
   get_revenue: 'Revenue summary',
   get_revenue_report: 'Full revenue report with CSV document',
   get_folio: 'View guest folio / itemized bill for a room {room}',

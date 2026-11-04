@@ -24,7 +24,7 @@ test('a new request replaces a pending write instead of executing it', async () 
   const agent = make(hotel, { tool: 'block_room', args: { room: '204' } }, { tool: 'get_dashboard', args: {} });
   await agent.handle(admin, 'block room 204', null);
   const out = await agent.handle(admin, 'dashboard instead', null);
-  assert.match(out.text!, /Occupancy/);
+  assert.match(out.text!, /rooms occupied/);
   assert.equal(hotel.state.rooms.find((r) => r.number === '204')!.status, 'dirty');
   assert.equal(agent.pending.size, 0);
 });

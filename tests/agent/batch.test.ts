@@ -18,8 +18,8 @@ test('all-read batch runs immediately, in order, without confirmation', async ()
   });
   const out = await agent.handle(admin, "today's arrivals and the dashboard", null);
   assert.match(out.text!, /Amara Osei/);
-  assert.match(out.text!, /Occupancy/);
-  assert.ok(out.text!.indexOf('Amara Osei') < out.text!.indexOf('Occupancy'));
+  assert.match(out.text!, /rooms occupied/);
+  assert.ok(out.text!.indexOf('Amara Osei') < out.text!.indexOf('rooms occupied'));
   assert.equal(agent.pending.size, 0);
 });
 
