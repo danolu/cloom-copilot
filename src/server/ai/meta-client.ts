@@ -44,6 +44,10 @@ export async function decideWithSpark(
         'Reply with ONLY a JSON object: {"tool":"<name>","args":{...}} to call one tool, ' +
         '{"actions":[{"tool":"<name>","args":{...}}]} with one entry per action (in the order requested) ' +
         'when the final message asks for several distinct actions, or {"reply":"<short friendly text>"} to just answer. ' +
+        'For a new reservation, return the create_reservation tool with whatever details were given ' +
+        '(guest, checkin, nights, roomType, discountPercent) and omit the rest — never invent a guest ' +
+        'name or date; the copilot will ask follow-up questions for missing details. ' +
+        'When the user asks for a briefing, morning update, or what to focus on, use get_role_briefing. ' +
         `Available tools: ${JSON.stringify(toolSchemas)}`,
     },
     ...history.slice(-12).map((turn): ChatMessage => ({ role: turn.role, content: turn.content.slice(0, 800) })),

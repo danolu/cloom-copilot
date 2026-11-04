@@ -7,6 +7,16 @@ import type { User } from '../../shared/types/hotel';
 import type { AgentResponse, ChatTurn, Decision, ToolSchema } from '../../shared/types/agent';
 import { formatToolResult } from './format';
 import { previewTool } from './preview';
+import {
+  applyDraftAnswer,
+  applyDraftCorrections,
+  draftFromArgs,
+  draftToArgs,
+  nextDraftField,
+  questionFor,
+  roomTypeOptions,
+  type ReservationDraft,
+} from './reservation-draft';
 
 // Staff identity resolution. Access is strictly permission-driven based on role.
 export const userOf = (userId: string): User | null => USERS[userId] || null;
@@ -19,6 +29,7 @@ export const HISTORY_LIMIT = 12;
 export interface AgentInstance {
   handle: (userId: string, text: string, messageId?: string | null) => Promise<AgentResponse>;
   pending: Map<string, Decision>;
+  drafts: Map<string, ReservationDraft>;
   history: Map<string, ChatTurn[]>;
   userOf: (userId: string) => User | null;
 }
@@ -32,6 +43,7 @@ export type DecideFn = (text: string, toolSchemas: ToolSchema[], history: ChatTu
 export function createAgent(hotel: HotelInstance, options: { decide?: DecideFn } = {}): AgentInstance {
   const decide = options.decide;
   const pending = new Map<string, Decision>();
+  const drafts = new Map<string, ReservationDraft>();
   const history = new Map<string, ChatTurn[]>();
   const seen = new Set<string>();
 
@@ -113,6 +125,46 @@ export function createAgent(hotel: HotelInstance, options: { decide?: DecideFn }
       pending.delete(userId);
     }
 
+    // Guided reservation draft: while a draft is open, every message is an
+    // answer to the current question (or a correction / cancel). Spark is
+    // not consulted until the draft completes or is discarded.
+    if (drafts.has(userId)) {
+      const draft = drafts.get(userId)!;
+      if (/^(cancel|stop|never\s*mind)/i.test(clean)) {
+        drafts.delete(userId);
+        return { text: 'No problem — reservation draft discarded. Nothing was created.' };
+      }
+      const currentField = nextDraftField(draft);
+      if (/^(confirm|yes|✅)/i.test(clean)) {
+        return {
+          text: `We're still collecting the reservation details${currentField ? ` — ${questionFor(currentField, draft, hotel)}` : ''}`,
+        };
+      }
+      const canApproveDiscount = ['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(user.role);
+      let note = '';
+      if (applyDraftCorrections(draft, clean, hotel, { canApproveDiscount })) {
+        note = 'Updated. ';
+      } else if (currentField) {
+        const result = applyDraftAnswer(draft, currentField, clean, hotel, { canApproveDiscount });
+        if (!result.ok) return { text: result.error };
+      }
+      const missing = nextDraftField(draft);
+      if (missing) return { text: note + questionFor(missing, draft, hotel) };
+      drafts.delete(userId);
+      if (!allowed(user, 'create_reservation')) {
+        return { text: `⛔ Sorry ${user.name}, the ${user.role} role can't create reservations. Draft discarded.` };
+      }
+      const args = draftToArgs(draft);
+      pending.set(userId, { tool: 'create_reservation', args });
+      return {
+        text: `${previewTool('create_reservation', args, hotel)}\nReply *confirm* ✅ or *cancel* ❌`,
+        buttons: [
+          { id: 'confirm', title: '✅ Confirm' },
+          { id: 'cancel', title: '❌ Cancel' },
+        ],
+      };
+    }
+
     // Bare confirm/cancel with nothing waiting must not become a model-chosen action.
     if (/^(confirm|yes|✅)/i.test(clean)) {
       return { text: 'Nothing to confirm right now — tell me what you would like to do.' };
@@ -177,6 +229,22 @@ export function createAgent(hotel: HotelInstance, options: { decide?: DecideFn }
       };
     }
 
+    // Reservation requests with missing details open the guided draft flow
+    // instead of executing with guessed defaults.
+    if (tool === 'create_reservation') {
+      const draft = draftFromArgs(decision.args);
+      if (draft.roomType) {
+        const hit = roomTypeOptions(hotel).find((o) => o.type.toLowerCase() === draft.roomType!.toLowerCase());
+        draft.roomType = hit?.type;
+      }
+      const missing = nextDraftField(draft);
+      if (missing) {
+        drafts.set(userId, draft);
+        return { text: questionFor(missing, draft, hotel) };
+      }
+      decision = { ...decision, args: draftToArgs(draft) };
+    }
+
     if (WRITE_TOOLS.has(tool)) {
       pending.set(userId, decision);
       return {
@@ -194,5 +262,5 @@ export function createAgent(hotel: HotelInstance, options: { decide?: DecideFn }
     }
   }
 
-  return { handle, pending, history, userOf };
+  return { handle, pending, drafts, history, userOf };
 }

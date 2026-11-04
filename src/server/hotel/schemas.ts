@@ -1,8 +1,9 @@
 import type { ToolSchema } from '../../shared/types/agent';
 
 export const TOOL_SCHEMAS: ToolSchema[] = Object.entries({
-  get_dashboard: 'Occupancy, arrivals, tasks, approvals, revenue today',
-  get_role_briefing: 'Personalized briefing for the current user role {role}',
+  get_dashboard: 'Raw property stats only: occupancy, arrivals, tasks, approvals, revenue today',
+  get_role_briefing:
+    'Personalized briefing for the current user — use whenever they ask for a briefing, morning update, their summary, or what to focus on {role}',
   list_arrivals: "Today's arriving guests",
   list_tasks: 'Open tasks',
   list_rooms: 'All rooms with status and rates',
@@ -13,7 +14,8 @@ export const TOOL_SCHEMAS: ToolSchema[] = Object.entries({
     'Post a charge (minibar, F&B, laundry) to a room folio (WRITE) {room, amount, description, category}',
   settle_folio: 'Settle and pay a guest folio at checkout (WRITE) {room, paymentMethod}',
   list_reservations: 'Current reservations',
-  create_reservation: 'Create a reservation (WRITE) {guest, roomType, nights}',
+  create_reservation:
+    'Create a reservation (WRITE) {guest, guestPhone, checkin (YYYY-MM-DD), nights, roomType, adults, discountPercent}. Omit details you do not know — the copilot asks follow-up questions for missing ones.',
   check_in: 'Check in a guest to a room (WRITE) {guest, room}',
   check_out: 'Check out a guest, marks room dirty and generates cleaning task (WRITE) {room}',
   update_room_status: 'Update room status to clean, dirty, or inspected (WRITE) {room, status}',
