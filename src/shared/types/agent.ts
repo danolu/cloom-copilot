@@ -7,10 +7,17 @@ export interface AgentResponse {
   duplicate?: boolean;
 }
 
+export interface ChatTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface Decision {
   tool?: string;
   args?: Record<string, any>;
   reply?: string;
+  // Multi-intent requests: one entry per requested action, in order.
+  actions?: Decision[];
 }
 
 export interface ToolSchema {

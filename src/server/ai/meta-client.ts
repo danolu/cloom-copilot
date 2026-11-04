@@ -1,7 +1,7 @@
 // Meta Model API client — the ONLY AI provider in this project.
 // Without an API key the agent refuses with a clear configuration error:
 // every decision goes through Muse Spark, there is no local substitute.
-import type { Decision, ToolSchema } from '../../shared/types/agent';
+import type { ChatTurn, Decision, ToolSchema } from '../../shared/types/agent';
 import type { DashboardResult } from '../../shared/types/hotel';
 
 const base = () => (process.env.META_API_BASE_URL || 'https://api.meta.ai/v1').replace(/\/$/, '');
@@ -27,16 +27,26 @@ async function chat(model: string, messages: ChatMessage[]): Promise<string> {
 }
 
 // Ask Muse Spark for one structured decision: {"tool": "...", "args": {...}}
-// or {"reply": "..."} when no tool is needed.
-export async function decideWithSpark(text: string, toolSchemas: ToolSchema[]): Promise<Decision> {
+// or {"reply": "..."} when no tool is needed. Recent conversation history is
+// included so follow-ups ("do the same for room 205") resolve, and a request
+// with several distinct actions comes back as {"actions": [...]} in order.
+export async function decideWithSpark(
+  text: string,
+  toolSchemas: ToolSchema[],
+  history: ChatTurn[] = [],
+): Promise<Decision> {
   const content = await chat(process.env.META_AGENT_MODEL || 'muse-spark-1.3', [
     {
       role: 'system',
       content:
-        'You are a hotel operations copilot. Reply with ONLY a JSON object: ' +
-        '{"tool":"<name>","args":{...}} to call a tool, or {"reply":"<short friendly text>"} to just answer. ' +
+        'You are a hotel operations copilot. The messages before the final user message are recent ' +
+        'conversation history: use them to resolve follow-ups like "do the same for room 205" or "and for 206 too". ' +
+        'Reply with ONLY a JSON object: {"tool":"<name>","args":{...}} to call one tool, ' +
+        '{"actions":[{"tool":"<name>","args":{...}}]} with one entry per action (in the order requested) ' +
+        'when the final message asks for several distinct actions, or {"reply":"<short friendly text>"} to just answer. ' +
         `Available tools: ${JSON.stringify(toolSchemas)}`,
     },
+    ...history.slice(-12).map((turn): ChatMessage => ({ role: turn.role, content: turn.content.slice(0, 800) })),
     { role: 'user', content: text },
   ]);
   const match = content.match(/\{[\s\S]*\}/);
